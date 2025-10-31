@@ -82,8 +82,7 @@ A simple web application that allows you to save text entries alongside their SH
 - **Search functionality**: Quickly find logs or entries by text.
 - **Delete entries**: Remove logs instantly with immediate feedback.
 - Visual status indicators for "verifying", "verified", "mismatch", and "error"
-- Support for local MongoDB or MongoDB Atlas
-- Both backend and frontend can be easily deployed (see below)
+
 
 ---
 
