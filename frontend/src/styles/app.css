@@ -15,7 +15,8 @@
 html,
 body,
 #root {
-  height: 100%
+  height: 100%;
+  overflow-x: hidden
 }
 
 body {
@@ -28,7 +29,9 @@ body {
 .app-container {
   max-width: 900px;
   margin: 0 auto;
-  padding: 24px
+  padding: 24px;
+  width: 100%;
+  overflow-x: hidden
 }
 
 .app-header {
@@ -106,7 +109,8 @@ button[disabled] {
 .authbar {
   display: flex;
   gap: 8px;
-  align-items: center
+  align-items: center;
+  flex-wrap: wrap
 }
 
 .authbar input {
@@ -239,6 +243,12 @@ button[disabled] {
     margin-left: auto;
     margin-right: auto
   }
+
+  .authbar input,
+  .searchbar input {
+    width: 100%;
+    max-width: 100%
+  }
 }
 
 @media (max-width:480px) {
@@ -262,5 +272,11 @@ button[disabled] {
     display: block;
     margin-left: auto;
     margin-right: auto
+  }
+
+  .authbar input,
+  .searchbar input {
+    width: 100%;
+    max-width: 100%
   }
 }
