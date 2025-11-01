@@ -36,12 +36,23 @@ export default function Home({ onLogout }) {
   }, [q])
 
   useEffect(() => {
-    // Get user name from token
+    // Get user name - try localStorage first (from login/register response), then token
+    const storedName = localStorage.getItem('userName')
+    if (storedName) {
+      setUserName(storedName)
+      return
+    }
+    
+    // Fallback: try to get from token
     const token = localStorage.getItem('token')
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]))
-        setUserName(payload.name || '')
+        if (payload.name) {
+          setUserName(payload.name)
+          // Also store it for future use
+          localStorage.setItem('userName', payload.name)
+        }
       } catch (e) {
         // Ignore token decode errors
       }
@@ -50,6 +61,7 @@ export default function Home({ onLogout }) {
 
   function handleLogout() {
     localStorage.removeItem('token')
+    localStorage.removeItem('userName')
     onLogout?.()
   }
 

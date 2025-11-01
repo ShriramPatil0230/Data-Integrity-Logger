@@ -89,6 +89,10 @@ export async function login(email, password) {
   })
   const data = await handleJson(res)
   localStorage.setItem('token', data.token)
+  // Store user info (including name) from API response
+  if (data.user && data.user.name) {
+    localStorage.setItem('userName', data.user.name)
+  }
   return data
 }
 
@@ -100,6 +104,10 @@ export async function register(name, email, password) {
   })
   const data = await handleJson(res)
   localStorage.setItem('token', data.token)
+  // Store user info (including name) from API response
+  if (data.user && data.user.name) {
+    localStorage.setItem('userName', data.user.name)
+  }
   return data
 }
 
