@@ -104,11 +104,11 @@ export default function Home({ onLogout, onAuthChange }) {
   return (
     <div className="home">
       <div className="header-actions">
-        {userName && (
+        {/* {userName && (
           <div className="welcome-message">
             Welcome, {userName}! 👋
           </div>
-        )}
+        )} */}
         <button onClick={handleLogout} className="logout-btn">Logout</button>
       </div>
       <div className="searchbar">
