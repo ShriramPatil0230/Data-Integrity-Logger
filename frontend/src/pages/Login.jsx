@@ -16,7 +16,7 @@ export default function Login({ onAuthSuccess }) {
       return
     }
     if (!email || !password) {
-      setError('Email and password are required')
+      setError('Email and Password are required')
       return
     }
     try {
