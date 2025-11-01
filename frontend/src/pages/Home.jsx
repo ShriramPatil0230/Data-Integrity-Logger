@@ -2,9 +2,8 @@ import React, { useEffect, useState } from 'react'
 import TextForm from '../components/TextForm'
 import LogList from '../components/LogList'
 import { createLog, fetchLogs } from '../api/api'
-import AuthBar from '../components/AuthBar'
 
-export default function Home() {
+export default function Home({ onLogout }) {
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -12,7 +11,7 @@ export default function Home() {
   const [limit] = useState(5)
   const [q, setQ] = useState('')
   const [total, setTotal] = useState(0)
-  const [token, setToken] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('token') : null))
+  const [userName, setUserName] = useState('')
 
   async function load(p = page) {
     try {
@@ -26,13 +25,33 @@ export default function Home() {
   }
 
   useEffect(() => {
+    const token = localStorage.getItem('token')
     if (!token) {
       setLogs([])
       setTotal(0)
       return
     }
+    
     load(1)
-  }, [q, token])
+  }, [q])
+
+  useEffect(() => {
+    // Get user name from token
+    const token = localStorage.getItem('token')
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        setUserName(payload.name || '')
+      } catch (e) {
+        // Ignore token decode errors
+      }
+    }
+  }, [])
+
+  function handleLogout() {
+    localStorage.removeItem('token')
+    onLogout?.()
+  }
 
   async function handleSave(text) {
     setLoading(true)
@@ -40,6 +59,7 @@ export default function Home() {
     try {
       const created = await createLog(text)
       setLogs((prev) => [created, ...prev])
+      setTotal((prev) => prev + 1)
     } catch (e) {
       setError(e.message || 'Failed to save entry')
     } finally {
@@ -47,22 +67,37 @@ export default function Home() {
     }
   }
 
+  async function handleDelete(id) {
+    try {
+      setLogs((prev) => prev.filter((log) => log._id !== id))
+      setTotal((prev) => Math.max(0, prev - 1))
+      // Reload to sync with server (in case pagination needs adjustment)
+      await load(page)
+    } catch (e) {
+      setError(e.message || 'Failed to delete entry')
+    }
+  }
+
   return (
     <div className="home">
-      <AuthBar onAuthed={() => { setToken(localStorage.getItem('token')); load(1) }} />
+      <div className="header-actions">
+        {userName && (
+          <div className="welcome-message">
+            Welcome, {userName}! 👋
+          </div>
+        )}
+        <button onClick={handleLogout} className="logout-btn">Logout</button>
+      </div>
       <div className="searchbar">
         <input placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
-      <TextForm onSave={handleSave} loading={loading} disabled={!token} />
+      <TextForm onSave={handleSave} loading={loading} disabled={false} />
       {error && (
         <div className="error" role="alert">
           {error}
         </div>
       )}
-      {!token && (
-        <div className="info">Please login or register to view and create your logs.</div>
-      )}
-      <LogList logs={logs} />
+      <LogList logs={logs} onDelete={handleDelete} />
       <div className="pagination">
         <button onClick={() => { const p = Math.max(1, page - 1); setPage(p); load(p) }} disabled={page <= 1}>Prev</button>
         <span>Page {page} of {Math.max(1, Math.ceil(total / limit))}</span>

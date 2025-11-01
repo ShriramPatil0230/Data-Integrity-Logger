@@ -15,7 +15,8 @@
 html,
 body,
 #root {
-  height: 100%
+  height: 100%;
+  overflow-x: hidden
 }
 
 body {
@@ -28,7 +29,9 @@ body {
 .app-container {
   max-width: 900px;
   margin: 0 auto;
-  padding: 24px
+  padding: 24px;
+  width: 100%;
+  overflow-x: hidden
 }
 
 .app-header {
@@ -103,10 +106,118 @@ button[disabled] {
   gap: 16px
 }
 
+.login-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto
+}
+
+.login-card h2 {
+  margin: 0 0 8px;
+  color: var(--text)
+}
+
+.login-subtitle {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0 0 24px
+}
+
+.form-group {
+  margin-bottom: 16px
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 14px
+}
+
+.form-group input {
+  width: 100%;
+  background: #0f141a;
+  color: var(--text);
+  border: 1px solid #223041;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--accent)
+}
+
+.toggle-auth {
+  margin-top: 16px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px
+}
+
+.link-btn {
+  background: none;
+  color: var(--accent);
+  padding: 0;
+  margin: 0;
+  border: none;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 14px
+}
+
+.link-btn:hover {
+  opacity: 0.8
+}
+
+.header-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap
+}
+
+.welcome-message {
+  background: var(--ok);
+  color: #001018;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  animation: slideIn 0.3s ease-out
+}
+
+.logout-btn {
+  margin: 0;
+  background: var(--warn);
+  color: #fff
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px)
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0)
+  }
+}
+
 .authbar {
   display: flex;
   gap: 8px;
-  align-items: center
+  align-items: center;
+  flex-wrap: wrap
 }
 
 .authbar input {
@@ -215,6 +326,19 @@ button[disabled] {
     padding: 12px
   }
 
+  .login-page {
+    min-height: 50vh
+  }
+
+  .header-actions {
+    flex-direction: column;
+    align-items: flex-start
+  }
+
+  .welcome-message {
+    width: 100%
+  }
+
   .log-item .log-meta {
     flex-direction: column;
     align-items: flex-start;
@@ -239,6 +363,12 @@ button[disabled] {
     margin-left: auto;
     margin-right: auto
   }
+
+  .authbar input,
+  .searchbar input {
+    width: 100%;
+    max-width: 100%
+  }
 }
 
 @media (max-width:480px) {
@@ -248,6 +378,14 @@ button[disabled] {
 
   .app-header h1 {
     font-size: 16px
+  }
+
+  .login-card {
+    max-width: 100%
+  }
+
+  .login-card h2 {
+    font-size: 20px
   }
 
   textarea {
@@ -262,5 +400,11 @@ button[disabled] {
     display: block;
     margin-left: auto;
     margin-right: auto
+  }
+
+  .authbar input,
+  .searchbar input {
+    width: 100%;
+    max-width: 100%
   }
 }

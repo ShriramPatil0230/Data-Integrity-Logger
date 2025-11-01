@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { verifyLog, deleteLog } from '../api/api'
 import { formatDate } from '../utils/formatDate'
 
-export default function LogItem({ log }) {
+export default function LogItem({ log, onDelete }) {
   const [status, setStatus] = useState('idle') // idle | verifying | verified | mismatch | error
   const [message, setMessage] = useState('')
 
@@ -22,8 +22,7 @@ export default function LogItem({ log }) {
   async function handleDelete() {
     try {
       await deleteLog(log._id)
-      // naive reload
-      window.location.reload()
+      onDelete?.(log._id)
     } catch (e) {
       setStatus('error')
       setMessage(e.message)
