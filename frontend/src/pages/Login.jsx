@@ -23,9 +23,17 @@ export default function Login({ onAuthSuccess }) {
       setLoading(true)
       setError('')
       if (isRegister) {
-        await register(name, email, password)
+        const data = await register(name, email, password)
+        // Ensure userName is stored before navigating
+        if (data?.user?.name) {
+          localStorage.setItem('userName', data.user.name)
+        }
       } else {
-        await login(email, password)
+        const data = await login(email, password)
+        // Ensure userName is stored before navigating
+        if (data?.user?.name) {
+          localStorage.setItem('userName', data.user.name)
+        }
       }
       onAuthSuccess?.()
     } catch (e) {

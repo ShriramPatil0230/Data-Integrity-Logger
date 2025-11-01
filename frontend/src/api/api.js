@@ -90,8 +90,13 @@ export async function login(email, password) {
   const data = await handleJson(res)
   localStorage.setItem('token', data.token)
   // Store user info (including name) from API response
-  if (data.user && data.user.name) {
-    localStorage.setItem('userName', data.user.name)
+  if (data.user) {
+    if (data.user.name) {
+      localStorage.setItem('userName', data.user.name)
+    }
+  } else if (data.name) {
+    // Fallback: some APIs might return name at root level
+    localStorage.setItem('userName', data.name)
   }
   return data
 }
@@ -105,8 +110,13 @@ export async function register(name, email, password) {
   const data = await handleJson(res)
   localStorage.setItem('token', data.token)
   // Store user info (including name) from API response
-  if (data.user && data.user.name) {
-    localStorage.setItem('userName', data.user.name)
+  if (data.user) {
+    if (data.user.name) {
+      localStorage.setItem('userName', data.user.name)
+    }
+  } else if (data.name) {
+    // Fallback: some APIs might return name at root level
+    localStorage.setItem('userName', data.name)
   }
   return data
 }

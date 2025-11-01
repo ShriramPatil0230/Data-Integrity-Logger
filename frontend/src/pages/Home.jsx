@@ -3,7 +3,7 @@ import TextForm from '../components/TextForm'
 import LogList from '../components/LogList'
 import { createLog, fetchLogs } from '../api/api'
 
-export default function Home({ onLogout }) {
+export default function Home({ onLogout, onAuthChange }) {
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -35,7 +35,7 @@ export default function Home({ onLogout }) {
     load(1)
   }, [q])
 
-  useEffect(() => {
+  function loadUserName() {
     // Get user name - try localStorage first (from login/register response), then token
     const storedName = localStorage.getItem('userName')
     if (storedName) {
@@ -57,7 +57,18 @@ export default function Home({ onLogout }) {
         // Ignore token decode errors
       }
     }
+  }
+
+  useEffect(() => {
+    loadUserName()
   }, [])
+
+  useEffect(() => {
+    // Re-check when auth changes (e.g., after login/register)
+    if (onAuthChange) {
+      loadUserName()
+    }
+  }, [onAuthChange])
 
   function handleLogout() {
     localStorage.removeItem('token')

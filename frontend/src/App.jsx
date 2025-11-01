@@ -4,6 +4,7 @@ import Login from './pages/Login'
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [authKey, setAuthKey] = useState(0) // Force re-render on auth change
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -12,10 +13,12 @@ export default function App() {
 
   function handleAuthSuccess() {
     setIsAuthenticated(true)
+    setAuthKey(prev => prev + 1) // Force Home to re-check userName
   }
 
   function handleLogout() {
     setIsAuthenticated(false)
+    setAuthKey(0)
   }
 
   return (
@@ -25,7 +28,7 @@ export default function App() {
       </header>
       <main>
         {isAuthenticated ? (
-          <Home onLogout={handleLogout} />
+          <Home key={authKey} onLogout={handleLogout} onAuthChange={authKey} />
         ) : (
           <Login onAuthSuccess={handleAuthSuccess} />
         )}
