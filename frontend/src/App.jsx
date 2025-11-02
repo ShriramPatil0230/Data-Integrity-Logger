@@ -34,7 +34,7 @@ export default function App() {
         )}
       </main>
       <footer className="app-footer">
-        <span>SHA-256 verification demo</span>
+        <span>Simple React log app with hash verification</span>
       </footer>
     </div>
   )
