@@ -627,14 +627,14 @@ button:not(.danger):not(.logout-btn):not(.link-btn):hover:not(:disabled) {
 .link-btn {
   background: none;
   color: var(--accent-blue);
-  padding: 0;
+  padding: 10px !important;
   margin: 0;
   border: none;
   text-decoration: underline;
   cursor: pointer;
   font-size: inherit;
   font-weight: 600;
-  box-shadow: none;
+  box-shadow: none !important;
 }
 
 .link-btn:hover {
