@@ -38,6 +38,7 @@ export default function LogItem({ log, onDelete }) {
       <pre className="text">{log.text}</pre>
       <div className="actions">
         <button onClick={handleVerify} disabled={status === 'verifying'}>
+          {status === 'verifying' && <span className="loading-spinner"></span>}
           {status === 'verifying' ? 'Verifying…' : 'Verify'}
         </button>
         {message && <span className={`status ${status}`}>{message}</span>}

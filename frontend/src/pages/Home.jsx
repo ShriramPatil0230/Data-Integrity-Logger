@@ -104,15 +104,10 @@ export default function Home({ onLogout, onAuthChange }) {
   return (
     <div className="home">
       <div className="header-actions">
-        {/* {userName && (
-          <div className="welcome-message">
-            Welcome, {userName}! 👋
-          </div>
-        )} */}
+        <div className="searchbar">
+          <input placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} />
+        </div>
         <button onClick={handleLogout} className="logout-btn">Logout</button>
-      </div>
-      <div className="searchbar">
-        <input placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
       <TextForm onSave={handleSave} loading={loading} disabled={false} />
       {error && (

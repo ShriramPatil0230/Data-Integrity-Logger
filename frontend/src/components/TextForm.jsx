@@ -32,9 +32,12 @@ export default function TextForm({ onSave, loading, disabled }) {
         disabled={loading || disabled}
       />
       {error && <div className="error">{error}</div>}
-      <button className='submit-btn' type="submit" disabled={loading || disabled}>
-        {loading ? 'Saving...' : 'Save'}
-      </button>
+      <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+        <button className='submit-btn' type="submit" disabled={loading || disabled}>
+          {loading && <span className="loading-spinner"></span>}
+          {loading ? 'Saving...' : 'Save'}
+        </button>
+      </div>
     </form>
   )
 }

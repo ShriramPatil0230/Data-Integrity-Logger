@@ -14,7 +14,10 @@ async function handleJson(response) {
     } catch {
       message = await response.text() || `HTTP ${response.status}`;
     }
-    throw new Error(message);
+    // Include status code in error for debugging
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
   }
   return response.json()
 }

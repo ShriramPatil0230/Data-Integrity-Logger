@@ -91,6 +91,7 @@ export default function Login({ onAuthSuccess }) {
           </div>
           {error && <div className="error">{error}</div>}
           <button type="submit" className="submit-btn" disabled={loading}>
+            {loading && <span className="loading-spinner"></span>}
             {loading ? '...' : isRegister ? 'Register' : 'Login'}
           </button>
           <div className="toggle-auth">
