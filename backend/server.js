@@ -28,6 +28,28 @@ app.use(helmet({
 app.use(express.json());
 app.use(morgan('dev'));
 
+// Root route - API information
+app.get('/', (_req, res) => {
+  res.json({
+    message: 'Data Integrity Logger API',
+    version: '1.0.0',
+    endpoints: {
+      health: '/api/health',
+      auth: {
+        register: 'POST /api/auth/register',
+        login: 'POST /api/auth/login'
+      },
+      logs: {
+        list: 'GET /api/logs',
+        create: 'POST /api/logs',
+        verify: 'POST /api/logs/:id/verify',
+        delete: 'DELETE /api/logs/:id'
+      }
+    },
+    documentation: 'This is an API server. Use the frontend application or API client to interact with the endpoints.'
+  });
+});
+
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
