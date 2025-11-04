@@ -4,11 +4,24 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { connectToDatabase } from './config/db.js';
+import mongoose from 'mongoose';
+import { User } from './models/User.js';
+import { Log } from './models/Log.js';
+import { Anchoring } from './models/Anchoring.js';
 import logRoutes from './routes/logRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import anchorRoutes from './routes/anchorRoutes.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
 
 dotenv.config();
+
+// Minimal env validation
+const requiredEnv = ['JWT_SECRET'];
+const missing = requiredEnv.filter((k) => !process.env[k]);
+if (missing.length) {
+  // eslint-disable-next-line no-console
+  console.warn(`Missing required env vars: ${missing.join(', ')}`);
+}
 
 const app = express();
 
@@ -25,8 +38,9 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 
-app.use(express.json());
-app.use(morgan('dev'));
+const jsonLimit = process.env.MAX_REQUEST_BYTES ? `${process.env.MAX_REQUEST_BYTES}b` : '128kb';
+app.use(express.json({ limit: jsonLimit }));
+app.use(process.env.NODE_ENV === 'production' ? morgan('combined') : morgan('dev'));
 
 // Root route - API information
 app.get('/', (_req, res) => {
@@ -51,33 +65,50 @@ app.get('/', (_req, res) => {
 });
 
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok' });
+  const dbConnected = mongoose.connection.readyState === 1;
+  res.status(200).json({ status: 'ok', dbConnected });
+});
+
+app.get('/api/ready', (_req, res) => {
+  const dbConnected = mongoose.connection.readyState === 1;
+  if (!dbConnected) return res.status(503).json({ status: 'not_ready', dbConnected: false });
+  return res.status(200).json({ status: 'ready', dbConnected: true });
 });
 
 app.use('/api/auth', authRoutes);
 app.use('/api/logs', logRoutes);
+app.use('/api/anchor', anchorRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 4000;
 
-// Start server immediately, don't wait for MongoDB
-app.listen(PORT, () => {
-  // eslint-disable-next-line no-console
-  console.log(`🚀 Server listening on port ${PORT}`);
-  
-  // Connect to MongoDB in the background (non-blocking)
-  connectToDatabase()
-    .then(() => {
-      // eslint-disable-next-line no-console
-      console.log('✅ MongoDB connected successfully');
-    })
-    .catch((err) => {
-      // eslint-disable-next-line no-console
-      console.warn('⚠️  MongoDB connection failed:', err.message);
-      // eslint-disable-next-line no-console
-      console.warn('⚠️  Database operations will fail until MongoDB is available');
-    });
-});
+async function boot() {
+  try {
+    await connectToDatabase();
+    // eslint-disable-next-line no-console
+    console.log('✅ MongoDB connected successfully');
+    // Ensure indexes are in place
+    await Promise.all([
+      User.syncIndexes(),
+      Log.syncIndexes(),
+      Anchoring.syncIndexes(),
+    ])
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('❌ MongoDB connection failed at startup:', err.message);
+    if (process.env.NODE_ENV === 'production') {
+      process.exit(1);
+    }
+    // In dev, continue to start server, readiness will be false until DB connects
+  }
+
+  app.listen(PORT, () => {
+    // eslint-disable-next-line no-console
+    console.log(`🚀 Server listening on port ${PORT}`);
+  });
+}
+
+boot();
 

@@ -35,6 +35,9 @@ A simple web application that allows you to save text entries alongside their SH
   # For local dev:
   MONGODB_URI=mongodb://127.0.0.1:27017/data-integrity-logger
   PORT=4000
+  JWT_SECRET=change-me
+  INTEGRITY_SECRET=separate-integrity-secret
+  MAX_TEXT_LENGTH=65536
   ```
   _or for Atlas:_
   ```
@@ -48,7 +51,7 @@ A simple web application that allows you to save text entries alongside their SH
   npm install
   npm run dev
   ```
-  _Note: Backend will run and warn if MongoDB isn't connected._
+  Readiness returns 503 until MongoDB is connected (`GET /api/ready`).
 
 ### 3. Configure Frontend
 
@@ -69,10 +72,11 @@ A simple web application that allows you to save text entries alongside their SH
 
 ## How Verification Works
 
-- When a log is saved, the backend calculates `SHA-256(text)` and stores the original text alongside its hash.
-- When you verify a log, the backend recalculates the SHA-256 hash from the stored text, then compares this "fresh" hash to the stored hash:
-  - **If they match:** status is "Verified".
-  - **If not:** status is "Mismatch" (indicates possible tampering or data corruption).
+- The backend canonicalizes text (Unicode NFKC; newlines normalized to `\n`), then stores:
+  - `hash = SHA-256(canonicalText)`
+  - `hmac = HMAC-SHA-256(canonicalText + "\n" + createdAtISO + "\n" + userId, INTEGRITY_SECRET)`
+- Verification recomputes both and only returns verified when both SHA and HMAC match.
+- UI shows: "Verified against stored value (tamper-evident)".
 
 ---
 
@@ -80,7 +84,7 @@ A simple web application that allows you to save text entries alongside their SH
 
 - **User Login and Registration**
 - **Search functionality**: Quickly find logs or entries by text.
-- **Delete entries**: Remove logs instantly with immediate feedback.
+- **Soft delete**: Deletions now mark records as deleted (audit-friendly).
 - Visual status indicators for "verifying", "verified", "mismatch", and "error"
 
 
@@ -92,7 +96,7 @@ A simple web application that allows you to save text entries alongside their SH
 - Deploy the `backend` folder as a Node app
 - Build: `npm install`
 - Start: `npm start`
-- Set environment variables: `MONGODB_URI`, `PORT`
+- Set environment variables: `MONGODB_URI`, `PORT`, `JWT_SECRET`, `INTEGRITY_SECRET`
 
 ### Frontend (recommended: Vercel)
 - Import the repo with the `frontend` folder as the project root
@@ -101,3 +105,18 @@ A simple web application that allows you to save text entries alongside their SH
 - Output directory: `dist`
 
 ---
+## Health and Readiness
+
+- `GET /api/health` returns liveness with `{ dbConnected }` flag.
+- `GET /api/ready` returns 200 only when MongoDB is connected; otherwise 503.
+
+## Repo Hygiene & Reproducible Builds
+
+- `node_modules/` are ignored via `.gitignore` to ensure clean installs.
+- Build roots are `backend/` and `frontend/` with separate `package.json` files.
+
+## Next Hardening Steps (not yet implemented)
+
+- External anchoring of batch Merkle roots to an append-only log.
+- Dual-control hard-delete and append-only audit events.
+- Optional CAPTCHA for registration bursts.

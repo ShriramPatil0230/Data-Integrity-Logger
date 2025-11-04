@@ -1,0 +1,16 @@
+# Root ignores
+node_modules/
+*.log
+.env
+.DS_Store
+
+# App subfolders
+backend/node_modules/
+frontend/node_modules/
+backend/dist/
+frontend/dist/
+coverage/
+*.local
+docker-data/
+
+

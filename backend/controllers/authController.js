@@ -3,7 +3,8 @@ import jwt from 'jsonwebtoken'
 import { User } from '../models/User.js'
 
 function createToken(user) {
-  const secret = process.env.JWT_SECRET || 'dev-secret'
+  const secret = process.env.JWT_SECRET
+  if (!secret) throw new Error('Missing JWT_SECRET')
   const payload = { sub: user.id, email: user.email, name: user.name }
   return jwt.sign(payload, secret, { expiresIn: '7d' })
 }

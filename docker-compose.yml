@@ -7,16 +7,28 @@ services:
       - '27017:27017'
     volumes:
       - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   backend:
     build: ./backend
     environment:
       - PORT=4000
       - MONGODB_URI=mongodb://mongo:27017/data-integrity-logger
       - JWT_SECRET=change-me
+      - INTEGRITY_SECRET=change-me-too
     ports:
       - '4000:4000'
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4000/api/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
 volumes:
   mongo_data:
 
