@@ -106,4 +106,8 @@ Or use your own local MongoDB on `localhost:27017`.
 - Hard deletes with dual-approval; append-only audit events.
 - Optional CAPTCHA for surge-protection on user signup.
 
+<<<<<<< HEAD
 ---
+=======
+---
+>>>>>>> dfbab5fd5e65f8dd6355046ff9ec3d879f53de6a
