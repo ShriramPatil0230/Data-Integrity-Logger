@@ -108,8 +108,5 @@ A simple web application that allows you to save text entries alongside their SH
 - Output directory: `dist`
 
 ---
-## Health and Readiness
 
-- `GET /api/health` returns liveness with `{ dbConnected }` flag.
-- `GET /api/ready` returns 200 only when MongoDB is connected; otherwise 503.
 
