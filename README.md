@@ -113,13 +113,3 @@ A simple web application that allows you to save text entries alongside their SH
 - `GET /api/health` returns liveness with `{ dbConnected }` flag.
 - `GET /api/ready` returns 200 only when MongoDB is connected; otherwise 503.
 
-## Repo Hygiene & Reproducible Builds
-
-- `node_modules/` are ignored via `.gitignore` to ensure clean installs.
-- Build roots are `backend/` and `frontend/` with separate `package.json` files.
-
-## Next Hardening Steps (not yet implemented)
-
-- External anchoring of batch Merkle roots to an append-only log.
-- Dual-control hard-delete and append-only audit events.
-- Optional CAPTCHA for registration bursts.
