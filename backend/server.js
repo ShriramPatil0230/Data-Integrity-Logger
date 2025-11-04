@@ -2,7 +2,6 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
-import morgan from 'morgan';
 import { connectToDatabase } from './config/db.js';
 import mongoose from 'mongoose';
 import { User } from './models/User.js';
@@ -12,6 +11,7 @@ import logRoutes from './routes/logRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import anchorRoutes from './routes/anchorRoutes.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
+import { logger } from './middlewares/logger.js';
 
 dotenv.config();
 
@@ -40,7 +40,8 @@ app.use(helmet({
 
 const jsonLimit = process.env.MAX_REQUEST_BYTES ? `${process.env.MAX_REQUEST_BYTES}b` : '128kb';
 app.use(express.json({ limit: jsonLimit }));
-app.use(process.env.NODE_ENV === 'production' ? morgan('combined') : morgan('dev'));
+// Use custom logger that masks request bodies in production
+app.use(logger);
 
 // Root route - API information
 app.get('/', (_req, res) => {
@@ -94,20 +95,20 @@ async function boot() {
       User.syncIndexes(),
       Log.syncIndexes(),
       Anchoring.syncIndexes(),
-    ])
+    ]);
+    
+    // Only start HTTP server after DB is connected and indexes are synced
+    app.listen(PORT, () => {
+      // eslint-disable-next-line no-console
+      console.log(`🚀 Server listening on port ${PORT}`);
+    });
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('❌ MongoDB connection failed at startup:', err.message);
-    if (process.env.NODE_ENV === 'production') {
-      process.exit(1);
-    }
-    // In dev, continue to start server, readiness will be false until DB connects
+    // Fail fast: exit in both prod and dev if DB can't connect
+    // This ensures the server never starts without a DB connection
+    process.exit(1);
   }
-
-  app.listen(PORT, () => {
-    // eslint-disable-next-line no-console
-    console.log(`🚀 Server listening on port ${PORT}`);
-  });
 }
 
 boot();

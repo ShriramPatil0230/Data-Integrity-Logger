@@ -30,6 +30,7 @@ router.post(
 router.delete(
   '/:id',
   requireAuth,
+  writeLimiter,
   checkDatabase,
   param('id').isString().notEmpty(),
   validate,

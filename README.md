@@ -30,24 +30,23 @@ A simple web application that allows you to save text entries alongside their SH
 
 ### 2. Configure Backend
 
-- Make a file at `backend/.env` for settings (use local or MongoDB Atlas):
+- Copy `backend/.env.example` to `backend/.env`:
+  ```bash
+  cd backend
+  cp .env.example .env
+  ```
+- Edit `backend/.env` and set your values:
   ```
   # For local dev:
   MONGODB_URI=mongodb://127.0.0.1:27017/data-integrity-logger
   PORT=4000
-  JWT_SECRET=change-me
-  INTEGRITY_SECRET=separate-integrity-secret
+  JWT_SECRET=change-me  # Generate with: openssl rand -hex 32
+  INTEGRITY_SECRET=separate-integrity-secret  # Generate with: openssl rand -hex 32
   MAX_TEXT_LENGTH=65536
   ```
-  _or for Atlas:_
-  ```
-  MONGODB_URI=mongodb+srv://<user>:<pass>@<cluster>/<db>?retryWrites=true&w=majority
-  PORT=4000
-  ```
-
+  See `backend/README.md` for detailed environment variable documentation, secrets rotation policy, and production configuration.
 - Install dependencies and start backend:
   ```
-  cd backend
   npm install
   npm run dev
   ```
@@ -55,14 +54,18 @@ A simple web application that allows you to save text entries alongside their SH
 
 ### 3. Configure Frontend
 
-- Create `frontend/.env`:
+- Copy `frontend/.env.example` to `frontend/.env`:
+  ```bash
+  cd frontend
+  cp .env.example .env
+  ```
+- Edit `frontend/.env`:
   ```
   VITE_BACKEND_URL=http://localhost:4000
   ```
 
 - Install dependencies and start frontend:
   ```
-  cd frontend
   npm install
   npm run dev
   ```
