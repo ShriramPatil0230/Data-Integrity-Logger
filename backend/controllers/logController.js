@@ -17,7 +17,8 @@ export async function createLog(req, res, next) {
     const createdAt = new Date();
     const userId = req.user.id;
     const hash = computeSha256Hex(canonical);
-    const secret = process.env.INTEGRITY_SECRET || process.env.JWT_SECRET || 'dev-secret';
+    const secret = process.env.INTEGRITY_SECRET;
+
     const hmac = computeHmacHex({ text: canonical, createdAtIso: createdAt.toISOString(), userId, secret });
 
     const log = await Log.create({ user: userId, text: canonical, hash, hmac, createdAt });
