@@ -1,125 +1,109 @@
 # Data Integrity Logger
-
-A simple web application that allows you to save text entries alongside their SHA-256 hashes and later verify data integrity. 
+A simple web application that allows you to save text entries alongside their SHA-256 hashes and later 
+verify data integrity. 
+This application helps you store text entries along with their cryptographic hashes, so you can later prove that your data hasn’t been tampered with. It includes easy data saving, secure verification, user accounts, search, and strong audit features.
 
 ---
 
 ## Tech Stack
 
-- **Frontend:** React (built with Vite)
-- **Backend:** Node.js & Express
-- **Database:** MongoDB (local or Atlas, accessed via Mongoose)
-- **Hashing:** Node's built-in `crypto` library (SHA-256)
+- **Frontend:** React (powered by Vite)
+- **Backend:** Node.js with Express
+- **Database:** MongoDB (via Mongoose, runs locally or on Atlas)
+- **Hashing/Crypto:** Node’s built-in `crypto` module (SHA-256/HMAC for integrity)
 
 ---
 
-## How to Run Locally
+## Running the Project Locally
 
-**Prerequisites:**  
-- Node.js v16+  
-- Docker (optional, for MongoDB)
+**Requirements**
+- Node.js v16 or newer
+- Docker (*optional*, for running MongoDB)
+- npm
 
-### 1. Start MongoDB
+### 1. Launch MongoDB
 
-- **Via Docker (recommended):**  
-  ```
-  docker run -d --name dil-mongo -p 27017:27017 mongo:7
-  ```
-- **Or local install:**  
-  Ensure MongoDB is running on `localhost:27017`.
+**Recommended (Docker):**
+```sh
+docker run -d --name dil-mongo -p 27017:27017 mongo:7
+```
+Or use your own local MongoDB on `localhost:27017`.
 
-### 2. Configure Backend
+---
 
-- Copy `backend/.env.example` to `backend/.env`:
-  ```bash
-  cd backend
-  cp .env.example .env
-  ```
-- Edit `backend/.env` and set your values:
-  ```
-  # For local dev:
-  MONGODB_URI=mongodb://127.0.0.1:27017/data-integrity-logger
-  PORT=4000
-  JWT_SECRET=change-me  # Generate with: openssl rand -hex 32
-  INTEGRITY_SECRET=separate-integrity-secret  # Generate with: openssl rand -hex 32
-  MAX_TEXT_LENGTH=65536
-  ```
-  See `backend/README.md` for detailed environment variable documentation, secrets rotation policy, and production configuration.
-- Install dependencies and start backend:
-  ```
-  npm install
-  npm run dev
-  ```
-  Readiness returns 503 until MongoDB is connected (`GET /api/ready`).
+### 2. Backend Setup
 
-### 3. Configure Frontend
+1. Copy and edit environment config:
+   ```sh
+   cd backend
+   cp .env.example .env
+   ```
+2. Edit `backend/.env` with your values:
+   ```
+   MONGODB_URI=mongodb://127.0.0.1:27017/data-integrity-logger
+   PORT=4000
+   JWT_SECRET=your-jwt-secret         # Use: openssl rand -hex 32
+   INTEGRITY_SECRET=your-hmac-secret  # Use: openssl rand -hex 32
+   MAX_TEXT_LENGTH=65536
+   ```
+   *(See `backend/README.md` for full options and best practices.)*
+3. Install dependencies and start the API:
+   ```sh
+   npm install
+   npm run dev
+   ```
+   - The API will refuse requests (`503` on `/api/ready`) until MongoDB is available.
 
-- Copy `frontend/.env.example` to `frontend/.env`:
-  ```bash
-  cd frontend
-  cp .env.example .env
-  ```
-- Edit `frontend/.env`:
-  ```
-  VITE_BACKEND_URL=http://localhost:4000
-  ```
+---
 
-- Install dependencies and start frontend:
-  ```
-  npm install
-  npm run dev
-  ```
-- Open the shown URL (usually [http://localhost:5173](http://localhost:5173)).
+### 3. Frontend Setup
+
+1. Configure frontend environment:
+   ```sh
+   cd frontend
+   cp .env.example .env
+   ```
+2. Edit `frontend/.env`:
+   ```
+   VITE_BACKEND_URL=http://localhost:4000
+   ```
+3. Install frontend deps and launch:
+   ```sh
+   npm install
+   npm run dev
+   ```
+4. Open the displayed local URL (usually [http://localhost:5173](http://localhost:5173)).
 
 ---
 
 ## How Verification Works
 
-- The backend canonicalizes text (Unicode NFKC; newlines normalized to `\n`), then stores:
-  - `hash = SHA-256(canonicalText)`
-  - `hmac = HMAC-SHA-256(canonicalText + "\n" + createdAtISO + "\n" + userId, INTEGRITY_SECRET)`
-- Verification recomputes both and only returns verified when both SHA and HMAC match.
-- UI shows: "Verified against stored value (tamper-evident)".
+- **Canonicalization:** Before storing or verifying, the backend standardizes input text (Unicode NFKC, normalized newlines).
+- **Secure Hash:** It computes `SHA-256(canonicalText)`.
+- **Tamper-Evident Signature:** It also computes an HMAC:  
+  ```
+  HMAC = HMAC-SHA-256(canonicalText + "\n" + createdAtISO + "\n" + userId, INTEGRITY_SECRET)
+  ```
+- **Verification:** On re-check, both the hash and the HMAC are recomputed and must exactly match what's stored. Only then does the UI show a “Verified” badge.
 
 ---
 
 ## Bonus Features
 
-- **User Login and Registration**
-- **Search functionality**: Quickly find logs or entries by text.
-- **Soft delete**: Deletions now mark records as deleted (audit-friendly).
-- Visual status indicators for "verifying", "verified", "mismatch", and "error"
-
-
----
-
-## Deploy
-
-### Backend (recommended: Render)
-- Deploy the `backend` folder as a Node app
-- Build: `npm install`
-- Start: `npm start`
-- Set environment variables: `MONGODB_URI`, `PORT`, `JWT_SECRET`, `INTEGRITY_SECRET`
-
-### Frontend (recommended: Vercel)
-- Import the repo with the `frontend` folder as the project root
-- Set environment variable: `VITE_BACKEND_URL` to your backend's URL
-- Build command: `npm run build`
-- Output directory: `dist`
+- **User Authentication:** Register/login to manage your own entries.
+- **Search:** Find your saved logs using text search.
+- **Soft Delete:** Entries you remove are only marked deleted—nothing disappears from the audit trail!
+- **Visualization:** The UI shows distinct states (“verifying”, “verified”, “mismatch”, “error”).
+- **Audit & Readiness:**  
+  - Health: `/api/health` and `/api/ready` endpoints signal liveness and DB readiness.
+  - Strict repo hygiene: `node_modules/` always ignored, clear mono-repo separation.
 
 ---
-## Health and Readiness
 
-- `GET /api/health` returns liveness with `{ dbConnected }` flag.
-- `GET /api/ready` returns 200 only when MongoDB is connected; otherwise 503.
+## Future Improvements (planned, not yet implemented)
 
-## Repo Hygiene & Reproducible Builds
+- Anchoring daily/periodic batch hashes to an external append-only log (e.g., Merkle roots).
+- Hard deletes with dual-approval; append-only audit events.
+- Optional CAPTCHA for surge-protection on user signup.
 
-- `node_modules/` are ignored via `.gitignore` to ensure clean installs.
-- Build roots are `backend/` and `frontend/` with separate `package.json` files.
-
-## Next Hardening Steps (not yet implemented)
-
-- External anchoring of batch Merkle roots to an append-only log.
-- Dual-control hard-delete and append-only audit events.
-- Optional CAPTCHA for registration bursts.
+---
