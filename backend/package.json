@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "test": "vitest run --environment node --setupFiles ./tests/setup.js"
+    "test": "vitest run --environment node  ./tests/setup.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
