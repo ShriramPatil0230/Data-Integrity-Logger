@@ -9,7 +9,7 @@ const AnchoringSchema = new mongoose.Schema(
   { timestamps: { createdAt: 'createdAt', updatedAt: false } }
 )
 
-AnchoringSchema.index({ date: 1 }, { unique: true })
+// AnchoringSchema.index({ date }, { unique: true })
 
 export const Anchoring = mongoose.model('Anchoring', AnchoringSchema)
 
