@@ -33,10 +33,16 @@ export async function createLog(req, res, next) {
 
 
     const hash = computeSha256Hex(canonical);
-    const secret = process.env.INTEGRITY_SECRET || process.env.JWT_SECRET || 'dev-integrity-secret';
+    // Get secret with proper fallback - ensure it's a non-empty string
+    const integritySecret = (process.env.INTEGRITY_SECRET && process.env.INTEGRITY_SECRET.trim()) || '';
+    const jwtSecret = (process.env.JWT_SECRET && process.env.JWT_SECRET.trim()) || '';
+    const secret = integritySecret || jwtSecret || 'dev-integrity-secret';
     
-    if (!secret) {
-      return res.status(500).json({ message: 'Server configuration error: INTEGRITY_SECRET not set' });
+    // Validate secret is a non-empty string
+    if (!secret || typeof secret !== 'string' || secret.length === 0) {
+      // eslint-disable-next-line no-console
+      console.error('INTEGRITY_SECRET and JWT_SECRET are both missing or empty');
+      return res.status(500).json({ message: 'Server configuration error: INTEGRITY_SECRET or JWT_SECRET must be set' });
     }
 
     // Convert userId to string for HMAC computation (handle both ObjectId and string)
@@ -109,7 +115,15 @@ export async function verifyLog(req, res, next) {
       return res.status(404).json({ message: 'Not found' });
     }
     const recomputed = computeSha256Hex(log.text);
-    const secret = process.env.INTEGRITY_SECRET || process.env.JWT_SECRET || 'dev-secret';
+    // Get secret with proper fallback - ensure it's a non-empty string
+    const integritySecret = (process.env.INTEGRITY_SECRET && process.env.INTEGRITY_SECRET.trim()) || '';
+    const jwtSecret = (process.env.JWT_SECRET && process.env.JWT_SECRET.trim()) || '';
+    const secret = integritySecret || jwtSecret || 'dev-secret';
+    
+    if (!secret || typeof secret !== 'string' || secret.length === 0) {
+      return res.status(500).json({ message: 'Server configuration error: INTEGRITY_SECRET or JWT_SECRET must be set' });
+    }
+    
     const recomputedHmac = computeHmacHex({
       text: log.text,
       createdAtIso: new Date(log.createdAt).toISOString(),
@@ -173,7 +187,16 @@ export async function rehashLog(req, res, next) {
     const canonical = canonicalizeText(log.text)
     const userId = String(log.user)
     const createdAtIso = new Date(log.createdAt).toISOString()
-    const secret = process.env.INTEGRITY_SECRET || process.env.JWT_SECRET || 'dev-secret'
+    
+    // Get secret with proper fallback - ensure it's a non-empty string
+    const integritySecret = (process.env.INTEGRITY_SECRET && process.env.INTEGRITY_SECRET.trim()) || '';
+    const jwtSecret = (process.env.JWT_SECRET && process.env.JWT_SECRET.trim()) || '';
+    const secret = integritySecret || jwtSecret || 'dev-secret';
+    
+    if (!secret || typeof secret !== 'string' || secret.length === 0) {
+      return res.status(500).json({ message: 'Server configuration error: INTEGRITY_SECRET or JWT_SECRET must be set' });
+    }
+    
     const newHash = computeSha256Hex(canonical)
     const newHmac = computeHmacHex({ text: canonical, createdAtIso, userId, secret })
 
