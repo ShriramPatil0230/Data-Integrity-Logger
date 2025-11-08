@@ -5,6 +5,11 @@ This application helps you store text entries along with their cryptographic has
 
 ---
 
+**Live App:** [https://data-integrity-logger-zbtv.vercel.app/](https://data-integrity-logger-zbtv.vercel.app/)  
+**Backend API:** [https://data-integrity-logger.onrender.com/](https://data-integrity-logger.onrender.com/)
+
+---
+
 ## Tech Stack
 
 - **Frontend:** React (powered by Vite)
@@ -46,7 +51,7 @@ Or use your own local MongoDB on `localhost:27017`.
    INTEGRITY_SECRET=your-hmac-secret  # Use: openssl rand -hex 32
    MAX_TEXT_LENGTH=65536
    ```
-   *(See `backend/README.md` for full options and best practices.)*
+   *(See [backend/README.md](./backend/README.md) for full options and best practices.)*
 3. Install dependencies and start the API:
    ```sh
    npm install
@@ -112,7 +117,7 @@ Or use your own local MongoDB on `localhost:27017`.
 
 ## Additional Resources
 
-- **Backend Documentation:** See [`backend/README.md`](backend/README.md) for detailed environment variable configuration and API documentation.
-- **Frontend Documentation:** See [`frontend/README.md`](frontend/README.md) for frontend-specific setup instructions.
-- **Quick Start Guide:** See [`START_SERVER.md`](START_SERVER.md) for troubleshooting and quick setup steps.
-- **Deployment Guide:** See [`DEPLOYMENT.md`](DEPLOYMENT.md) for production deployment instructions and troubleshooting.
+- **Backend Documentation:** See [backend/README.md](./backend/README.md) for detailed environment variable configuration and API documentation.
+- **Frontend Documentation:** See [frontend/README.md](./frontend/README.md) for frontend-specific setup instructions.
+- **Quick Start Guide:** See [START_SERVER.md](./START_SERVER.md) for troubleshooting and quick setup steps.
+- **Deployment Guide:** See [DEPLOYMENT.md](./DEPLOYMENT.md) for production deployment instructions and troubleshooting.
