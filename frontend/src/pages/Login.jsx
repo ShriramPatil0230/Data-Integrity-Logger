@@ -7,10 +7,15 @@ export default function Login({ onAuthSuccess }) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [isRegister, setIsRegister] = useState(true)
+  const [isRegister, setIsRegister] = useState(false) // Default to Login
 
+  
   async function handleSubmit(e) {
-    e.preventDefault()
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault()
+    }
+    setError('')
+
     if (isRegister && !name) {
       setError('Name is required')
       return
@@ -19,25 +24,32 @@ export default function Login({ onAuthSuccess }) {
       setError('Email and Password are required')
       return
     }
+    setLoading(true)
     try {
-      setLoading(true)
-      setError('')
       if (isRegister) {
         const data = await register(name, email, password)
-        // Ensure userName is stored before navigating
         if (data?.user?.name) {
           localStorage.setItem('userName', data.user.name)
         }
+        onAuthSuccess?.()
       } else {
         const data = await login(email, password)
-        // Ensure userName is stored before navigating
         if (data?.user?.name) {
           localStorage.setItem('userName', data.user.name)
+          onAuthSuccess?.()
+        } else {
+          setError('User not valid. Try to input valid email and password.')
         }
       }
-      onAuthSuccess?.()
-    } catch (e) {
-      setError(e.message || 'Authentication failed')
+    } catch (err) {
+      if (
+        (err?.response && (err.response.status === 401 || err.response.status === 400)) ||
+        err?.message === 'Invalid email or password'
+      ) {
+        setError('User not valid. Try to input valid email and password.')
+      } else {
+        setError(err.message || 'Authentication failed')
+      }
     } finally {
       setLoading(false)
     }
@@ -50,7 +62,12 @@ export default function Login({ onAuthSuccess }) {
         <p className="login-subtitle">
           {isRegister ? 'Register to start logging your data' : 'Login to access your logs'}
         </p>
-        <form onSubmit={handleSubmit}>
+        <form
+          onSubmit={handleSubmit}
+          autoComplete="off"
+          // Remove browser "required" validation to prevent reload
+          noValidate
+        >
           {isRegister && (
             <div className="form-group">
               <label htmlFor="name">Name</label>
@@ -61,7 +78,6 @@ export default function Login({ onAuthSuccess }) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={loading}
-                required
               />
             </div>
           )}
@@ -74,7 +90,6 @@ export default function Login({ onAuthSuccess }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
-              required
             />
           </div>
           <div className="form-group">
@@ -86,7 +101,6 @@ export default function Login({ onAuthSuccess }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
-              required
             />
           </div>
           {error && <div className="error">{error}</div>}
@@ -115,4 +129,3 @@ export default function Login({ onAuthSuccess }) {
     </div>
   )
 }
-
