@@ -92,9 +92,16 @@ app.get('/api/ready', (_req, res) => {
   return res.status(200).json({ status: 'ready', dbConnected: true });
 });
 
+// Register API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/anchor', anchorRoutes);
+
+// Log registered routes in development
+if (process.env.NODE_ENV !== 'production') {
+  // eslint-disable-next-line no-console
+  console.log('✅ Routes registered: /api/auth, /api/logs, /api/anchor');
+}
 
 app.use(notFoundHandler);
 app.use(errorHandler);
