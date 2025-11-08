@@ -15,22 +15,32 @@ import { logger } from './middlewares/logger.js';
 
 dotenv.config();
 
-// Minimal env validation
+// Environment validation
 const requiredEnv = ['JWT_SECRET'];
 const missing = requiredEnv.filter((k) => !process.env[k]);
 if (missing.length) {
   // eslint-disable-next-line no-console
-  console.warn(`Missing required env vars: ${missing.join(', ')}`);
+  console.warn(`⚠️  Missing required env vars: ${missing.join(', ')}`);
+}
+
+// Warn about INTEGRITY_SECRET (recommended but has fallback)
+if (!process.env.INTEGRITY_SECRET) {
+  // eslint-disable-next-line no-console
+  console.warn('⚠️  INTEGRITY_SECRET not set. Using JWT_SECRET as fallback (not recommended for production).');
 }
 
 const app = express();
 
 // Configure CORS first to allow frontend connections
-app.use(cors({
-  origin: '*',
+// CORS_ORIGIN can be a single origin, comma-separated origins, or '*' for all
+const corsOrigin = process.env.CORS_ORIGIN || '*';
+const corsOptions = {
+  origin: corsOrigin === '*' ? '*' : corsOrigin.split(',').map(origin => origin.trim()),
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+app.use(cors(corsOptions));
 
 // Configure Helmet with relaxed CSP for development
 app.use(helmet({
@@ -72,7 +82,13 @@ app.get('/api/health', (_req, res) => {
 
 app.get('/api/ready', (_req, res) => {
   const dbConnected = mongoose.connection.readyState === 1;
-  if (!dbConnected) return res.status(503).json({ status: 'not_ready', dbConnected: false });
+  if (!dbConnected) {
+    return res.status(503).json({ 
+      status: 'not_ready', 
+      dbConnected: false,
+      message: 'MongoDB not connected. Ensure MongoDB is running and MONGODB_URI is correct.'
+    });
+  }
   return res.status(200).json({ status: 'ready', dbConnected: true });
 });
 
@@ -86,6 +102,17 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 4000;
 
 async function boot() {
+  // Start HTTP server immediately to allow health checks
+  // The server will return 503 on /api/ready until DB is connected
+  app.listen(PORT, () => {
+    // eslint-disable-next-line no-console
+    console.log(`🚀 Server listening on port ${PORT}`);
+    // eslint-disable-next-line no-console
+    console.log('⏳ Connecting to MongoDB...');
+  });
+
+  // Attempt to connect to database (non-blocking)
+  // Server will continue running and return 503 on /api/ready until connected
   try {
     await connectToDatabase();
     // eslint-disable-next-line no-console
@@ -96,18 +123,22 @@ async function boot() {
       Log.syncIndexes(),
       Anchoring.syncIndexes(),
     ]);
-    
-    // Only start HTTP server after DB is connected and indexes are synced
-    app.listen(PORT, () => {
-      // eslint-disable-next-line no-console
-      console.log(`🚀 Server listening on port ${PORT}`);
-    });
+    // eslint-disable-next-line no-console
+    console.log('✅ Database indexes synced');
   } catch (err) {
     // eslint-disable-next-line no-console
-    console.error('❌ MongoDB connection failed at startup:', err.message);
-    // Fail fast: exit in both prod and dev if DB can't connect
-    // This ensures the server never starts without a DB connection
-    process.exit(1);
+    console.error('❌ MongoDB connection failed:', err.message);
+    // eslint-disable-next-line no-console
+    console.error('⚠️  Server is running but will return 503 on /api/ready until MongoDB is available');
+    // eslint-disable-next-line no-console
+    console.error('💡 Make sure MongoDB is running: docker run -d --name dil-mongo -p 27017:27017 mongo:7');
+    // In production, we might want to exit, but in dev we allow the server to start
+    // and retry connection attempts
+    if (process.env.NODE_ENV === 'production') {
+      // eslint-disable-next-line no-console
+      console.error('❌ Exiting in production mode due to DB connection failure');
+      process.exit(1);
+    }
   }
 }
 

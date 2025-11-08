@@ -4,10 +4,16 @@ import { computeSha256Hex, computeHmacHex, canonicalizeText } from '../utils/has
 
 export async function createLog(req, res, next) {
   try {
+    // Validate user is authenticated
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
     const { text } = req.body;
     if (!text || typeof text !== 'string' || text.trim() === '') {
       return res.status(400).json({ message: 'Text is required' });
     }
+    
     const MAX_LEN = Number(process.env.MAX_TEXT_LENGTH || 65536);
     const canonical = canonicalizeText(text);
     if (Buffer.byteLength(canonical, 'utf8') > MAX_LEN) {
@@ -15,17 +21,62 @@ export async function createLog(req, res, next) {
     }
 
     const createdAt = new Date();
+    // Get userId - Mongoose will handle ObjectId conversion automatically
     const userId = req.user.id;
+    
+    // Validate userId exists and is not empty
+    if (!userId) {
+      // eslint-disable-next-line no-console
+      console.error('Missing user ID in request:', req.user);
+      return res.status(401).json({ message: 'User ID not found in token' });
+    }
+
+
     const hash = computeSha256Hex(canonical);
-    const secret = process.env.INTEGRITY_SECRET;
+    const secret = process.env.INTEGRITY_SECRET || process.env.JWT_SECRET || 'dev-integrity-secret';
+    
+    if (!secret) {
+      return res.status(500).json({ message: 'Server configuration error: INTEGRITY_SECRET not set' });
+    }
 
-    const hmac = computeHmacHex({ text: canonical, createdAtIso: createdAt.toISOString(), userId, secret });
+    // Convert userId to string for HMAC computation (handle both ObjectId and string)
+    const userIdString = userId.toString ? userId.toString() : String(userId);
+    const hmac = computeHmacHex({ text: canonical, createdAtIso: createdAt.toISOString(), userId: userIdString, secret });
 
+    // Create log entry - Mongoose will automatically convert userId to ObjectId if needed
     const log = await Log.create({ user: userId, text: canonical, hash, hmac, createdAt });
-    await AuditEvent.create({ user: userId, action: 'create', entity: 'Log', entityId: log._id, success: true });
+    
+    try {
+      await AuditEvent.create({ user: userId, action: 'create', entity: 'Log', entityId: log._id, success: true });
+    } catch (auditErr) {
+      // Log audit error but don't fail the request
+      // eslint-disable-next-line no-console
+      console.error('Audit event creation failed:', auditErr.message);
+    }
+    
     return res.status(201).json(log);
   } catch (err) {
-    try { await AuditEvent.create({ user: req.user?.id, action: 'create', entity: 'Log', entityId: null, success: false, metadata: { error: err.message } }); } catch {}
+    // eslint-disable-next-line no-console
+    console.error('Error creating log:', {
+      name: err.name,
+      message: err.message,
+      stack: err.stack,
+      userId: req.user?.id,
+      textLength: req.body?.text?.length
+    });
+    
+    // Provide more specific error messages
+    if (err.name === 'ValidationError') {
+      const errors = Object.values(err.errors || {}).map(e => e.message).join(', ');
+      return res.status(400).json({ message: `Validation error: ${errors}` });
+    }
+    if (err.name === 'CastError') {
+      return res.status(400).json({ message: `Invalid data format: ${err.message}` });
+    }
+    if (err.code === 11000) {
+      return res.status(409).json({ message: 'Duplicate entry' });
+    }
+    // For other errors, pass to error handler
     return next(err);
   }
 }
@@ -76,10 +127,16 @@ export async function verifyLog(req, res, next) {
       currentHash: recomputed,
       originalHash: log.hash
     };
-    await AuditEvent.create({ user: req.user.id, action: 'verify', entity: 'Log', entityId: log._id, success: verified, metadata: { verifiedSha, verifiedHmac } });
+    try {
+      await AuditEvent.create({ user: req.user.id, action: 'verify', entity: 'Log', entityId: log._id, success: verified, metadata: { verifiedSha, verifiedHmac } });
+    } catch (auditErr) {
+      // eslint-disable-next-line no-console
+      console.error('Audit event creation failed:', auditErr.message);
+    }
     return res.json(response);
   } catch (err) {
-    try { await AuditEvent.create({ user: req.user?.id, action: 'verify', entity: 'Log', entityId: req.params?.id, success: false, metadata: { error: err.message } }); } catch {}
+    // eslint-disable-next-line no-console
+    console.error('Error verifying log:', err);
     return next(err);
   }
 }
@@ -93,10 +150,16 @@ export async function deleteLog(req, res, next) {
       { new: true }
     )
     if (!updated) return res.status(404).json({ message: 'Not found' })
-    await AuditEvent.create({ user: req.user.id, action: 'delete', entity: 'Log', entityId: updated._id, success: true })
+    try {
+      await AuditEvent.create({ user: req.user.id, action: 'delete', entity: 'Log', entityId: updated._id, success: true });
+    } catch (auditErr) {
+      // eslint-disable-next-line no-console
+      console.error('Audit event creation failed:', auditErr.message);
+    }
     return res.status(200).json({ id: updated.id, isDeleted: true, deletedAt: updated.deletedAt })
   } catch (err) {
-    try { await AuditEvent.create({ user: req.user?.id, action: 'delete', entity: 'Log', entityId: req.params?.id, success: false, metadata: { error: err.message } }); } catch {}
+    // eslint-disable-next-line no-console
+    console.error('Error deleting log:', err);
     return next(err)
   }
 }
@@ -118,10 +181,16 @@ export async function rehashLog(req, res, next) {
     log.hash = newHash
     log.hmac = newHmac
     await log.save()
-    await AuditEvent.create({ user: req.user.id, action: 'rehash', entity: 'Log', entityId: log._id, success: true })
+    try {
+      await AuditEvent.create({ user: req.user.id, action: 'rehash', entity: 'Log', entityId: log._id, success: true });
+    } catch (auditErr) {
+      // eslint-disable-next-line no-console
+      console.error('Audit event creation failed:', auditErr.message);
+    }
     return res.json({ id: log.id, hash: log.hash, hmac: log.hmac })
   } catch (err) {
-    try { await AuditEvent.create({ user: req.user?.id, action: 'rehash', entity: 'Log', entityId: req.params?.id, success: false, metadata: { error: err.message } }); } catch {}
+    // eslint-disable-next-line no-console
+    console.error('Error rehashing log:', err);
     return next(err)
   }
 }

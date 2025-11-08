@@ -7,8 +7,20 @@ export default function App() {
   const [authKey, setAuthKey] = useState(0) // Force re-render on auth change
 
   useEffect(() => {
-    const token = localStorage.getItem('token')
-    setIsAuthenticated(!!token)
+    // Check authentication on mount and when storage changes
+    function checkAuth() {
+      const token = localStorage.getItem('token')
+      setIsAuthenticated(!!token)
+    }
+    
+    checkAuth()
+    
+    // Listen for storage changes (e.g., token cleared in another tab)
+    window.addEventListener('storage', checkAuth)
+    
+    return () => {
+      window.removeEventListener('storage', checkAuth)
+    }
   }, [])
 
   function handleAuthSuccess() {

@@ -52,7 +52,9 @@ Or use your own local MongoDB on `localhost:27017`.
    npm install
    npm run dev
    ```
-   - The API will refuse requests (`503` on `/api/ready`) until MongoDB is available.
+   - The server will start immediately and return `503` on `/api/ready` until MongoDB is connected.
+   - Check backend health: `http://localhost:4000/api/health` (always returns 200)
+   - Check readiness: `http://localhost:4000/api/ready` (returns 503 until DB connected)
 
 ---
 
@@ -106,8 +108,11 @@ Or use your own local MongoDB on `localhost:27017`.
 - Hard deletes with dual-approval; append-only audit events.
 - Optional CAPTCHA for surge-protection on user signup.
 
-<<<<<<< HEAD
 ---
-=======
----
->>>>>>> dfbab5fd5e65f8dd6355046ff9ec3d879f53de6a
+
+## Additional Resources
+
+- **Backend Documentation:** See [`backend/README.md`](backend/README.md) for detailed environment variable configuration and API documentation.
+- **Frontend Documentation:** See [`frontend/README.md`](frontend/README.md) for frontend-specific setup instructions.
+- **Quick Start Guide:** See [`START_SERVER.md`](START_SERVER.md) for troubleshooting and quick setup steps.
+- **Deployment Guide:** See [`DEPLOYMENT.md`](DEPLOYMENT.md) for production deployment instructions and troubleshooting.
