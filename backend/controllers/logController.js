@@ -89,6 +89,11 @@ export async function createLog(req, res, next) {
 
 export async function listLogs(req, res, next) {
   try {
+    // Validate user is authenticated
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
     const page = Math.max(1, Number(req.query.page || 1))
     const limit = Math.min(50, Math.max(1, Number(req.query.limit || 10)))
     const skip = (page - 1) * limit
@@ -103,6 +108,17 @@ export async function listLogs(req, res, next) {
     ])
     return res.json({ items, total, page, limit, pages: Math.ceil(total / limit) })
   } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('Error listing logs:', {
+      name: err.name,
+      message: err.message,
+      stack: err.stack,
+      userId: req.user?.id
+    });
+    
+    if (err.name === 'CastError') {
+      return res.status(400).json({ message: `Invalid data format: ${err.message}` });
+    }
     return next(err);
   }
 }
